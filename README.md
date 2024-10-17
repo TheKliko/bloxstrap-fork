@@ -20,6 +20,11 @@
 
 ----
 
+**Bloxstrap Fork:**
+*This is a fork of [Bloxstrap](https://github.com/bloxstraplabs/bloxstrap), featuring automatic mod updates. Python is required.*
+<br>
+<br>
+
 Bloxstrap is a third-party replacement for the standard Roblox bootstrapper, providing additional useful features and improvements.
 
 Running into a problem or need help with something? [Check out the Wiki](https://github.com/pizzaboxer/bloxstrap/wiki). If you can't find anything, or would like to suggest something, please [submit an issue](https://github.com/pizzaboxer/bloxstrap/issues).
