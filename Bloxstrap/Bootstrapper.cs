@@ -23,6 +23,9 @@ using Bloxstrap.UI.Elements.Bootstrapper.Base;
 
 using ICSharpCode.SharpZipLib.Zip;
 
+// Kliko's modding tool
+using System.Diagnostics;
+
 namespace Bloxstrap
 {
     public class Bootstrapper
@@ -226,6 +229,21 @@ namespace Bloxstrap
 
                 if (_cancelTokenSource.IsCancellationRequested)
                     return;
+                
+                // Kliko's modding tool
+                if (File.Exists(Path.Combine(Paths.Modifications, "info.json")))
+                {
+                    App.Logger.WriteLine("TESTING", "YES INFO.JSON");
+                    if (await HasOutdatedModifications())
+                    {
+                        App.Logger.WriteLine("TESTING", "UPDATE MODS");
+                        await UpdateModifications();
+                    }
+                }
+                else
+                {
+                    App.Logger.WriteLine("TESTING", "NO INFO.JSON");
+                }
 
                 // we require deployment details for applying modifications for a worst case scenario,
                 // where we'd need to restore files from a package that isn't present on disk and needs to be redownloaded
@@ -842,6 +860,94 @@ namespace Bloxstrap
             lockFile.Delete();
 
             _isInstalling = false;
+        }
+
+        // Kliko's modding tool
+        private async Task<bool> HasOutdatedModifications()
+        {
+            const string LOG_IDENT = "Bootstrapper::KlikosModUpdater::Check";
+            SetStatus("Checking for mod updates...");
+            App.Logger.WriteLine(LOG_IDENT, "Checking for mod updates...");
+
+            var command = "python";
+            var path = Path.Combine(Paths.Base, "klikos_mod_updater", "check.py");
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = command,
+                Arguments = path,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+
+            using (var process = new Process { StartInfo = startInfo })
+            {
+                process.Start();
+
+                await process.WaitForExitAsync();
+
+                if (process.ExitCode == 9009)
+                {
+                    App.Logger.WriteLine(LOG_IDENT, "Failed to check for mod updates!");
+                    App.Logger.WriteLine(LOG_IDENT, "Please make sure Python is installed and has been added to PATH.");
+                    return false;
+                }
+                else if (process.ExitCode == 1)
+                {
+                    App.Logger.WriteLine(LOG_IDENT, "Updates found!");
+                    return true;
+                }
+                else if (process.ExitCode == 0)
+                {
+                    App.Logger.WriteLine(LOG_IDENT, "No updates found!");
+                    return false;
+                }
+            }
+            App.Logger.WriteLine(LOG_IDENT, "Unknown error!");
+            return false;
+        }
+
+        // Kliko's modding tool
+        private async Task UpdateModifications()
+        {
+            const string LOG_IDENT = "Bootstrapper::KlikosModUpdater::Update";
+            SetStatus("Updating mods...");
+            App.Logger.WriteLine(LOG_IDENT, "Updating mods...");
+
+            var command = "python";
+            var path = Path.Combine(Paths.Base, "klikos_mod_updater", "update.py");
+            
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = command,
+                Arguments = path,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+
+            using (var process = new Process { StartInfo = startInfo })
+            {
+                process.Start();
+
+                await process.WaitForExitAsync();
+
+                if (process.ExitCode == 9009)
+                {
+                    App.Logger.WriteLine(LOG_IDENT, "Failed to check for mod updates!");
+                    App.Logger.WriteLine(LOG_IDENT, "Please make sure Python is installed and has been added to PATH.");
+                }
+                else if (process.ExitCode == 0)
+                {
+                    App.Logger.WriteLine(LOG_IDENT, "Mod update sucess!");
+                }
+                else
+                {
+                    App.Logger.WriteLine(LOG_IDENT, "Unknown error!");
+                }
+            }
+            return;
         }
 
         private async Task ApplyModifications()
